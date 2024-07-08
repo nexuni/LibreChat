@@ -33,7 +33,7 @@ services:
   client:
     build:
       context: .
-      dockerfile: Dockerfile.multi
+      dockerfile: Dockerfile.multi.1
       target: prod-stage
     container_name: LibreChat-NGINX
     ports:
