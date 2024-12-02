@@ -7,6 +7,8 @@ import type {
   TSharedLink,
   TConversation,
   EModelEndpoint,
+  TConversationTag,
+  TBanner,
 } from './schemas';
 import type { TSpecsConfig } from './models';
 export type TOpenAIMessage = OpenAI.Chat.ChatCompletionMessageParam;
@@ -25,6 +27,7 @@ export type TEndpointOption = {
   endpointType?: EModelEndpoint;
   modelDisplayLabel?: string;
   resendFiles?: boolean;
+  promptCache?: boolean;
   maxContextTokens?: number;
   imageDetail?: ImageDetail;
   model?: string | null;
@@ -49,6 +52,7 @@ export type TPayload = Partial<TMessage> &
   };
 
 export type TSubmission = {
+  artifacts?: string;
   plugin?: TResPlugin;
   plugins?: TResPlugin[];
   userMessage: TMessage;
@@ -57,22 +61,24 @@ export type TSubmission = {
   messages: TMessage[];
   isRegenerate?: boolean;
   conversationId?: string;
-  initialResponse: TMessage;
+  initialResponse?: TMessage;
   conversation: Partial<TConversation>;
   endpointOption: TEndpointOption;
 };
+
+export type EventSubmission = Omit<TSubmission, 'initialResponse'> & { initialResponse: TMessage };
 
 export type TPluginAction = {
   pluginKey: string;
   action: 'install' | 'uninstall';
   auth?: unknown;
-  isAssistantTool?: boolean;
+  isEntityTool?: boolean;
 };
 
 export type GroupedConversations = [key: string, TConversation[]][];
 
 export type TUpdateUserPlugins = {
-  isAssistantTool?: boolean;
+  isEntityTool?: boolean;
   pluginKey: string;
   action: string;
   auth?: unknown;
@@ -86,7 +92,7 @@ export type TCategory = {
 
 export type TError = {
   message: string;
-  code?: number;
+  code?: number | string;
   response?: {
     data?: {
       message?: string;
@@ -122,6 +128,13 @@ export type TUpdateMessageRequest = {
   text: string;
 };
 
+export type TUpdateMessageContent = {
+  conversationId: string;
+  messageId: string;
+  index: number;
+  text: string;
+};
+
 export type TUpdateUserKeyRequest = {
   name: string;
   value: string;
@@ -138,6 +151,7 @@ export type TUpdateConversationResponse = TConversation;
 export type TDeleteConversationRequest = {
   conversationId?: string;
   thread_id?: string;
+  endpoint?: string;
   source?: string;
 };
 
@@ -170,6 +184,24 @@ export type TSharedLinkResponse = TSharedLink;
 export type TSharedLinksResponse = TSharedLink[];
 export type TDeleteSharedLinkResponse = TSharedLink;
 
+// type for getting conversation tags
+export type TConversationTagsResponse = TConversationTag[];
+// type for creating conversation tag
+export type TConversationTagRequest = Partial<
+  Omit<TConversationTag, 'createdAt' | 'updatedAt' | 'count' | 'user'>
+> & {
+  conversationId?: string;
+  addToConversation?: boolean;
+};
+
+export type TConversationTagResponse = TConversationTag;
+
+// type for tagging conversation
+export type TTagConversationRequest = {
+  tags: string[];
+};
+export type TTagConversationResponse = string[];
+
 export type TForkConvoRequest = {
   messageId: string;
   conversationId: string;
@@ -197,6 +229,7 @@ export type TConfig = {
   type?: EModelEndpoint;
   azure?: boolean;
   availableTools?: [];
+  availableRegions?: string[];
   plugins?: Record<string, string>;
   name?: string;
   iconURL?: string;
@@ -235,6 +268,7 @@ export type TRegisterUser = {
   username: string;
   password: string;
   confirm_password?: string;
+  token?: string;
 };
 
 export type TLoginUser = {
@@ -275,12 +309,18 @@ export type TInterfaceConfig = {
   termsOfService?: {
     externalUrl?: string;
     openNewTab?: boolean;
+    modalAcceptance?: boolean;
+    modalTitle?: string;
+    modalContent?: string;
   };
   endpointsMenu: boolean;
   modelSelect: boolean;
   parameters: boolean;
   sidePanel: boolean;
   presets: boolean;
+  multiConvo: boolean;
+  bookmarks: boolean;
+  prompts: boolean;
 };
 
 export type TStartupConfig = {
@@ -294,7 +334,13 @@ export type TStartupConfig = {
   openidLoginEnabled: boolean;
   openidLabel: string;
   openidImageUrl: string;
-  ldapLoginEnabled: boolean;
+  /** LDAP Auth Configuration */
+  ldap?: {
+    /** LDAP enabled */
+    enabled: boolean;
+    /** Whether LDAP uses username vs. email */
+    username?: boolean;
+  };
   serverDomain: string;
   emailLoginEnabled: boolean;
   registrationEnabled: boolean;
@@ -445,9 +491,7 @@ export type TUpdatePromptLabelsResponse = {
   message: string;
 };
 
-export type TDeletePromptGroupResponse = {
-  promptGroup: string;
-};
+export type TDeletePromptGroupResponse = TUpdatePromptLabelsResponse;
 
 export type TDeletePromptGroupRequest = {
   id: string;
@@ -463,3 +507,15 @@ export type TGetRandomPromptsRequest = {
   limit: number;
   skip: number;
 };
+
+export type TCustomConfigSpeechResponse = { [key: string]: string };
+
+export type TUserTermsResponse = {
+  termsAccepted: boolean;
+};
+
+export type TAcceptTermsResponse = {
+  success: boolean;
+};
+
+export type TBannerResponse = TBanner | null;
