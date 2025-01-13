@@ -9,7 +9,6 @@ RUN mkdir -p /app && chown node:node /app
 WORKDIR /app
 
 USER node
-
 COPY --chown=node:node . .
 
 RUN \
